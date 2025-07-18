@@ -17,7 +17,7 @@ public class FirebaseConfig {
     @Bean
     public FirebaseApp firebaseApp() throws IOException {
         // Path to your service account key file in src/main/resources
-        InputStream serviceAccount = new ClassPathResource("java-springboot-sms-otp-firebase-adminsdk-fbsvc-a456485a1d.json").getInputStream();
+        InputStream serviceAccount = new ClassPathResource("model-parsec-465503-p3-firebase-adminsdk-fbsvc-692079f928.json").getInputStream();
 
         FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))

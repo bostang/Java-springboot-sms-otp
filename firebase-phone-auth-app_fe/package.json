@@ -1,5 +1,5 @@
 {
-  "name": "firebase-phone-auth-app_client",
+  "name": "firebase-phone-auth-app_fe",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

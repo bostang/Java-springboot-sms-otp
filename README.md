@@ -2,18 +2,20 @@
 
 ## HOW TO RUN
 
-- **Backend**
+### Backend
+
+- pastikan bahwa _secret key_ (`.json`) tersimpan di folder `resources` (sejajar dengan `application.properties`).
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-- **Client-side (React.js)**
+### Client-side (React.js)
 
 what you need to do:
 
 ```bash
-cd firebase-phone-auth-app_client
+cd firebase-phone-auth-app_fe
 
 # install semua library yang dibutuhkan
 npm install
@@ -24,12 +26,14 @@ npm install firebase
 npm start
 ```
 
-kalau mau buat proyek sendiri dari nol :
+pastikan bahwa `.env` terkonfigurasi karena kita menyimpan `firebaseConfig` di sana.
+
+*_kalau mau buat proyek sendiri dari nol_ :
 
 ```bash
 # inisiasi proyek react.js
 npx create-react-app firebase-phone-auth_client
-cd firebase-phone-auth-app_client
+cd firebase-phone-auth-app_fe
 
 # install semua library yang dibutuhkan
 npm install

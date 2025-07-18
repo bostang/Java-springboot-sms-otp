@@ -1,4 +1,4 @@
-/* global grecaptcha */
+/* global grecaptcha -- Disables no-unused-vars for grecaptcha global */
 import React, { useState, useEffect } from 'react';
 import { auth } from './firebaseConfig'; // Your Firebase config
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
@@ -14,18 +14,22 @@ const PhoneAuth = () => {
 
   // This effect runs once after the component mounts to set up the reCAPTCHA verifier
   useEffect(() => {
+    // Only initialize reCAPTCHA if it hasn't been initialized yet and not already rendered
     if (!window.recaptchaVerifier && !recaptchaRendered) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible', // Use 'invisible' for a smoother user experience
         'callback': (response) => {
           // reCAPTCHA solved, allows signInWithPhoneNumber to proceed
           console.log("reCAPTCHA solved:", response);
-          setRecaptchaRendered(true);
+          setRecaptchaRendered(true); // Mark reCAPTCHA as rendered
         },
         'expired-callback': () => {
           // Response expired. Ask user to solve reCAPTCHA again.
           setError('reCAPTCHA expired. Please try again.');
-          window.recaptchaVerifier.render().then(widgetId => grecaptcha.reset(widgetId)); // Reset reCAPTCHA
+          // Reset reCAPTCHA to allow the user to try again
+          if (window.grecaptcha && window.recaptchaVerifier) {
+            window.recaptchaVerifier.render().then(widgetId => window.grecaptcha.reset(widgetId));
+          }
         }
       });
 
@@ -68,7 +72,7 @@ const PhoneAuth = () => {
       if (err.code === 'auth/web-storage-unsupported' || err.code === 'auth/too-many-requests') {
           // For these errors, reCAPTCHA might need a refresh or the user needs to try again later
           if (window.recaptchaVerifier) {
-              window.recaptchaVerifier.render().then(widgetId => grecaptcha.reset(widgetId));
+              window.recaptchaVerifier.render().then(widgetId => window.grecaptcha.reset(widgetId));
           }
       }
     } finally {
@@ -100,7 +104,7 @@ const PhoneAuth = () => {
       setMessage(`Successfully verified! User UID: ${user.uid}`);
       console.log('Firebase user:', user);
 
-      // --- STEP 5: Send ID Token to your Spring Boot Backend ---
+      // --- Send ID Token to your Spring Boot Backend ---
       const idToken = await user.getIdToken();
       console.log('Firebase ID Token:', idToken);
 
@@ -142,57 +146,82 @@ const PhoneAuth = () => {
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '400px', margin: '50px auto', border: '1px solid #ccc', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-      <h2>Phone Number Authentication</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Phone Number Authentication</h2>
 
-      {!confirmationResult ? (
-        <div>
-          <label htmlFor="phoneNumber">Phone Number (e.g., +628123456789):</label>
-          <input
-            id="phoneNumber"
-            type="tel" // Use tel for phone numbers
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            placeholder="Enter phone number with country code"
-            style={{ width: '100%', padding: '8px', margin: '10px 0' }}
-          />
-          <button
-            onClick={handleSendOtp}
-            disabled={loading}
-            style={{ padding: '10px 15px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-          >
-            {loading ? 'Sending...' : 'Send OTP'}
-          </button>
-        </div>
-      ) : (
-        <div>
-          <label htmlFor="otp">Verification Code (OTP):</label>
-          <input
-            id="otp"
-            type="text"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            placeholder="Enter 6-digit OTP"
-            style={{ width: '100%', padding: '8px', margin: '10px 0' }}
-          />
-          <button
-            onClick={handleVerifyOtp}
-            disabled={loading}
-            style={{ padding: '10px 15px', background: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-          >
-            {loading ? 'Verifying...' : 'Verify OTP'}
-          </button>
-        </div>
-      )}
+        {!confirmationResult ? (
+          <div className="space-y-4">
+            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">Phone Number (e.g., +628123456789):</label>
+            <input
+              id="phoneNumber"
+              type="tel" // Use tel for phone numbers
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="Enter phone number with country code"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+            <button
+              onClick={handleSendOtp}
+              disabled={loading}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              {loading ? 'Sending...' : 'Send OTP'}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <label htmlFor="otp" className="block text-sm font-medium text-gray-700">Verification Code (OTP):</label>
+            <input
+              id="otp"
+              type="text"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              placeholder="Enter 6-digit OTP"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+            />
+            <button
+              onClick={handleVerifyOtp}
+              disabled={loading}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+            >
+              {loading ? 'Verifying...' : 'Verify OTP'}
+            </button>
+          </div>
+        )}
 
-      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
-      {message && <p style={{ color: 'green' }}>{message}</p>}
+        {error && <p className="mt-4 text-sm text-red-600">Error: {error}</p>}
+        {message && <p className="mt-4 text-sm text-green-600">{message}</p>}
 
-      {/* The reCAPTCHA container. Firebase will inject the reCAPTCHA widget here. */}
-      {/* For invisible reCAPTCHA, it might not be visually obvious but it's still needed. */}
-      <div id="recaptcha-container" style={{ marginTop: '20px' }}></div>
+        {/* The reCAPTCHA container. Firebase will inject the reCAPTCHA widget here. */}
+        {/* For invisible reCAPTCHA, it might not be visually obvious but it's still needed. */}
+        <div id="recaptcha-container" className="mt-6"></div>
+      </div>
     </div>
   );
 };
 
-export default PhoneAuth;
+// Main App component
+const App = () => {
+  return (
+    // Tailwind CSS setup for Inter font and rounded corners
+    <>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+          body {
+            font-family: 'Inter', sans-serif;
+          }
+          /* Ensure all elements have rounded corners */
+          * {
+            border-radius: 0.5rem; /* Default rounded-md from Tailwind */
+          }
+        `}
+      </style>
+      <PhoneAuth />
+    </>
+  );
+};
+
+export default App;

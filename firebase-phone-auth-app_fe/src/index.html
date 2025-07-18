@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Firebase Phone Auth Test</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+  <h2>Test Firebase Phone Login</h2>
+  <div id="recaptcha-container"></div>
+  <input type="text" id="phoneNumber" placeholder="+62xxxxxxx"><br>
+  <button onclick="sendOTP()">Send OTP</button><br><br>
+
+  <input type="text" id="otpCode" placeholder="Enter OTP"><br>
+  <button onclick="verifyOTP()">Verify & Get ID Token</button>
+
+  <pre id="output"></pre>
+
+  <script>
+    // Step 1: Init Firebase
+   // Your web app's Firebase configuration
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyCTXgqBktnmUo8z5VkxMuwBpLkBGZ_syj0",
+
+authDomain: "model-parsec-465503-p3.firebaseapp.com",
+
+projectId: "model-parsec-465503-p3",
+
+storageBucket: "model-parsec-465503-p3.firebasestorage.app",
+
+messagingSenderId: "371655033224",
+
+appId: "1:371655033224:web:0b124bca5fca9b65a67a3d"
+
+};
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    let confirmationResult = null;
+
+    // Step 2: Send OTP
+    function sendOTP() {
+      const phoneNumber = document.getElementById('phoneNumber').value;
+      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+        size: 'invisible'
+      });
+
+      auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
+        .then((result) => {
+          confirmationResult = result;
+          document.getElementById('output').textContent = 'OTP sent!';
+        })
+        .catch((error) => {
+          console.error(error);
+          document.getElementById('output').textContent = 'Error: ' + error.message;
+        });
+    }
+
+    // Step 3: Verify OTP
+    function verifyOTP() {
+      const code = document.getElementById('otpCode').value;
+      if (!confirmationResult) {
+        document.getElementById('output').textContent = 'Please send OTP first.';
+        return;
+      }
+
+      confirmationResult.confirm(code)
+        .then(async (result) => {
+          const idToken = await result.user.getIdToken();
+          console.log("ID Token:", idToken);
+          document.getElementById('output').textContent = "✅ ID Token:\n" + idToken;
+        })
+        .catch((error) => {
+          console.error(error);
+          document.getElementById('output').textContent = 'Error verifying OTP: ' + error.message;
+        });
+    }
+  </script>
+</body>
+</html>

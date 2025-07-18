@@ -34,3 +34,5 @@ build/
 
 # FIREBASE AUTHENTICATION SECRET KEY #
 java-springboot-sms-otp-firebase-adminsdk-fbsvc-a456485a1d.json
+
+/src/main/resources/*.json

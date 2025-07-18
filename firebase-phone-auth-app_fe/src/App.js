@@ -1,3 +1,5 @@
+// App.js
+
 import React from 'react';
 import './App.css'; // You can keep or remove this
 import PhoneAuth from './PhoneAuth';
