@@ -1,83 +1,201 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Firebase Phone Auth Test</title>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Inter font from Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+  </style>
 </head>
-<body>
-  <h2>Test Firebase Phone Login</h2>
-  <div id="recaptcha-container"></div>
-  <input type="text" id="phoneNumber" placeholder="+62xxxxxxx"><br>
-  <button onclick="sendOTP()">Send OTP</button><br><br>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full text-center">
+    <h2 class="text-3xl font-bold mb-6 text-gray-800">Firebase Phone Login</h2>
 
-  <input type="text" id="otpCode" placeholder="Enter OTP"><br>
-  <button onclick="verifyOTP()">Verify & Get ID Token</button>
+    <!-- Phone Number Input -->
+    <div class="mb-4">
+      <input
+        type="text"
+        id="phoneNumber"
+        placeholder="+62xxxxxxx"
+        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+    </div>
 
-  <pre id="output"></pre>
+    <!-- reCAPTCHA container (invisible) -->
+    <div id="recaptcha-container" class="mb-6"></div>
 
-  <script>
-    // Step 1: Init Firebase
-   // Your web app's Firebase configuration
+    <!-- Send OTP Button -->
+    <button
+      onclick="sendOTP()"
+      id="sendOtpButton"
+      class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-300 ease-in-out"
+    >
+      Send OTP
+    </button>
 
-const firebaseConfig = {
+    <div class="my-6 border-t border-gray-200"></div>
 
-apiKey: "AIzaSyCTXgqBktnmUo8z5VkxMuwBpLkBGZ_syj0",
+    <!-- OTP Code Input -->
+    <div class="mb-4">
+      <input
+        type="text"
+        id="otpCode"
+        placeholder="Enter OTP"
+        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+    </div>
 
-authDomain: "model-parsec-465503-p3.firebaseapp.com",
+    <!-- Verify OTP Button -->
+    <button
+      onclick="verifyOTP()"
+      id="verifyOtpButton"
+      class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-300 ease-in-out"
+    >
+      Verify & Get ID Token
+    </button>
 
-projectId: "model-parsec-465503-p3",
+    <!-- Output Area -->
+    <pre id="output" class="mt-6 p-4 bg-gray-50 rounded-md text-left text-sm text-gray-700 whitespace-pre-wrap break-all"></pre>
+  </div>
 
-storageBucket: "model-parsec-465503-p3.firebasestorage.app",
+  <!-- Firebase SDKs (Modular) -->
+  <script type="module">
+    // Import necessary Firebase modules
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getAuth, signInWithPhoneNumber, RecaptchaVerifier } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-messagingSenderId: "371655033224",
+    // Your web app's Firebase configuration
+    // IMPORTANT: Replace with your actual Firebase project configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCp2i-F0XR_sNzREenEPP3rXp8agZDL49A",
+      authDomain: "java-springboot-sms-otp.firebaseapp.com",
+      projectId: "java-springboot-sms-otp",
+      storageBucket: "java-springboot-sms-otp.firebasestorage.app",
+      messagingSenderId: "299586048159",
+      appId: "1:299586048159:web:0975b26ca07e037d4f92aa",
+      measurementId: "G-C03MT7F4KH"
+    };
 
-appId: "1:371655033224:web:0b124bca5fca9b65a67a3d"
-
-};
-
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
     let confirmationResult = null;
+    let recaptchaVerifier = null;
 
-    // Step 2: Send OTP
-    function sendOTP() {
-      const phoneNumber = document.getElementById('phoneNumber').value;
-      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-        size: 'invisible'
-      });
-
-      auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
-        .then((result) => {
-          confirmationResult = result;
-          document.getElementById('output').textContent = 'OTP sent!';
-        })
-        .catch((error) => {
-          console.error(error);
-          document.getElementById('output').textContent = 'Error: ' + error.message;
-        });
+    // Function to display messages to the user
+    function displayOutput(message, isError = false) {
+      const outputElement = document.getElementById('output');
+      outputElement.textContent = message;
+      if (isError) {
+        outputElement.classList.add('text-red-600');
+        outputElement.classList.remove('text-gray-700');
+      } else {
+        outputElement.classList.add('text-gray-700');
+        outputElement.classList.remove('text-red-600');
+      }
     }
 
-    // Step 3: Verify OTP
-    function verifyOTP() {
-      const code = document.getElementById('otpCode').value;
-      if (!confirmationResult) {
-        document.getElementById('output').textContent = 'Please send OTP first.';
+    // Function to send OTP
+    window.sendOTP = async () => {
+      const phoneNumber = document.getElementById('phoneNumber').value;
+      displayOutput('Sending OTP...');
+
+      if (!phoneNumber) {
+        displayOutput('Please enter a phone number.', true);
         return;
       }
 
-      confirmationResult.confirm(code)
-        .then(async (result) => {
-          const idToken = await result.user.getIdToken();
-          console.log("ID Token:", idToken);
-          document.getElementById('output').textContent = "✅ ID Token:\n" + idToken;
-        })
-        .catch((error) => {
-          console.error(error);
-          document.getElementById('output').textContent = 'Error verifying OTP: ' + error.message;
+      try {
+        // Initialize reCAPTCHA Verifier
+        // The 'recaptcha-container' element is used to render the reCAPTCHA widget.
+        // 'size: invisible' means the reCAPTCHA will run in the background.
+        recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          'size': 'invisible',
+          'callback': (response) => {
+            // reCAPTCHA solved, allow signInWithPhoneNumber.
+            // This callback is triggered when the reCAPTCHA is successfully verified.
+            console.log('reCAPTCHA verified:', response);
+          },
+          'expired-callback': () => {
+            // Response expired. Ask user to solve reCAPTCHA again.
+            displayOutput('reCAPTCHA expired. Please try again.', true);
+            console.log('reCAPTCHA expired.');
+          }
         });
-    }
+
+        // Render the reCAPTCHA widget. This is important for invisible reCAPTCHA to work.
+        await recaptchaVerifier.render();
+
+        // Sign in with phone number
+        // This will trigger the reCAPTCHA challenge if needed and send the OTP.
+        confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+        displayOutput('OTP sent successfully! Please check your phone.');
+
+      } catch (error) {
+        console.error("Error sending OTP:", error);
+        // Handle specific Firebase errors for better user feedback
+        if (error.code === 'auth/invalid-phone-number') {
+          displayOutput('Error: Invalid phone number format. Please include country code (e.g., +62812...).', true);
+        } else if (error.code === 'auth/too-many-requests') {
+          displayOutput('Error: Too many requests. Please try again later.', true);
+        } else if (error.code === 'auth/billing-not-enabled') {
+          displayOutput('Error: Firebase billing not enabled for Phone Authentication. Please upgrade your Firebase plan.', true);
+        } else {
+          displayOutput('Error sending OTP: ' + error.message, true);
+        }
+      }
+    };
+
+    // Function to verify OTP
+    window.verifyOTP = async () => {
+      const code = document.getElementById('otpCode').value;
+      displayOutput('Verifying OTP...');
+
+      if (!confirmationResult) {
+        displayOutput('Please send OTP first.', true);
+        return;
+      }
+      if (!code) {
+        displayOutput('Please enter the OTP code.', true);
+        return;
+      }
+
+      try {
+        // Confirm the OTP code received by the user
+        const result = await confirmationResult.confirm(code);
+        const user = result.user;
+        const idToken = await user.getIdToken();
+
+        console.log("User signed in:", user);
+        console.log("ID Token:", idToken);
+        displayOutput("✅ Successfully verified! ID Token:\n" + idToken);
+
+      } catch (error) {
+        console.error("Error verifying OTP:", error);
+        // Handle specific Firebase errors for better user feedback
+        if (error.code === 'auth/invalid-verification-code') {
+          displayOutput('Error: Invalid OTP code. Please check and try again.', true);
+        } else if (error.code === 'auth/code-expired') {
+          displayOutput('Error: OTP code has expired. Please request a new one.', true);
+        } else {
+          displayOutput('Error verifying OTP: ' + error.message, true);
+        }
+      }
+    };
   </script>
 </body>
 </html>
